@@ -96,8 +96,9 @@ function New-MesosWindowsAgent {
           "MESOS_AUTHENTICATE_HTTP_READWRITE=false"
       )
     }
+    $MESOS_SERVICE_WRAPPER = "MesosServiceWrapper.exe"
     New-DCOSWindowsService -Name $MESOS_SERVICE_NAME -DisplayName $MESOS_SERVICE_DISPLAY_NAME -Description $MESOS_SERVICE_DESCRIPTION `
-                           -LogFile $logFile -WrapperPath $SERVICE_WRAPPER -BinaryPath "$mesosBinary $mesosAgentArguments" -EnvironmentFiles @($environmentFile)
+                           -LogFile $logFile -WrapperPath $MESOS_SERVICE_WRAPPER -BinaryPath "$mesosBinary $mesosAgentArguments" -EnvironmentFiles @($environmentFile)
     Start-Service $MESOS_SERVICE_NAME
 }
 
