@@ -29,7 +29,7 @@ function New-Environment {
     New-Directory $SPARTAN_SERVICE_DIR
     New-Directory $SPARTAN_LOG_DIR
     $spartanReleaseZip = Join-Path $env:TEMP "spartan-release.zip"
-    Write-Output "Downloading latest Spartan build"
+    Write-Output "Downloading latest Spartan build $SPARTAN_LATEST_RELEASE_URL"
     Start-ExecuteWithRetry { Invoke-WebRequest -UseBasicParsing -Uri $SPARTAN_LATEST_RELEASE_URL -OutFile $spartanReleaseZip }
     Write-Output "Extracting Spartan zip archive to $SPARTAN_RELEASE_DIR"
     Expand-Archive -LiteralPath $spartanReleaseZip -DestinationPath $SPARTAN_RELEASE_DIR
@@ -43,6 +43,7 @@ function New-DevConBinary {
     }
     New-Item -ItemType Directory -Path $devConDir | Out-Null
     $devConCab = Join-Path $devConDir "devcon.cab"
+    Write-Output "Downloading $DEVCON_CAB_URL"
     Start-ExecuteWithRetry { Invoke-WebRequest -UseBasicParsing -Uri $DEVCON_CAB_URL -OutFile $devConCab | Out-Null }
     $devConFile = "filbad6e2cce5ebc45a401e19c613d0a28f"
     Start-ExternalCommand { expand.exe $devConCab -F:$devConFile $devConDir } -ErrorMessage "Failed to expand $devConCab" | Out-Null

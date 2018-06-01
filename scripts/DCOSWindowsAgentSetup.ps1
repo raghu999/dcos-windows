@@ -39,7 +39,7 @@ function Add-ToSystemPath {
         [Parameter(Mandatory=$true)]
         [string[]]$Path
     )
-    Write-Output "$((Get-Date -Format g).ToString()): Entered Add-ToSystemPath"
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Entered Add-ToSystemPath"
     $systemPath = [System.Environment]::GetEnvironmentVariable('Path', 'Machine').Split(';')
     $currentPath = $env:PATH.Split(';')
     foreach($p in $Path) {
@@ -70,21 +70,21 @@ function Start-ExecuteWithRetry {
     $ErrorActionPreference = "Continue"
     $retryCount = 0
     while ($true) {
-        Write-Output "$((Get-Date -Format g).ToString()): Start-ExecuteWithRetry attempt $retryCount"
+        Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Start-ExecuteWithRetry attempt $retryCount"
         try {
             $res = Invoke-Command -ScriptBlock $ScriptBlock `
                                   -ArgumentList $ArgumentList
             $ErrorActionPreference = $currentErrorActionPreference
-             Write-Output "$((Get-Date -Format g).ToString()): Start-ExecuteWithRetry completed"
+             Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Start-ExecuteWithRetry completed"
             return $res
         } catch [System.Exception] {
             $retryCount++
             if ($retryCount -gt $MaxRetryCount) {
                 $ErrorActionPreference = $currentErrorActionPreference
-                 Write-Output "$((Get-Date -Format g).ToString()): Start-ExecuteWithRetry exception thrown"
+                 Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Start-ExecuteWithRetry exception thrown"
                 Throw
             } else {
-                Write-Output "$((Get-Date -Format g).ToString()): Start-ExecuteWithRetry Retry: $_.ToString()"
+                Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Start-ExecuteWithRetry Retry: $_.ToString()"
                 Start-Sleep $RetryInterval
             }
         }
@@ -92,17 +92,18 @@ function Start-ExecuteWithRetry {
 }
 
 function Install-Git {
-    Write-Output "$((Get-Date -Format g).ToString()): Entered Install-Git"
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Entered Install-Git"
     $gitInstallerURL = "https://dcos-mirror.azureedge.net/win-downloads/Git-2.14.1-64-bit.exe"
     $gitInstallDir = Join-Path $env:ProgramFiles "Git"
     $gitPaths = @("$gitInstallDir\cmd", "$gitInstallDir\bin")
     if(Test-Path $gitInstallDir) {
-        Write-Output "$((Get-Date -Format g).ToString()): Git is already installed"
+        Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Git is already installed"
         Add-ToSystemPath $gitPaths
         return
     }
-    Write-Output "$((Get-Date -Format g).ToString()): Downloading Git from $gitInstallerURL"
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Downloading Git from $gitInstallerURL"
     $programFile = Join-Path $env:TEMP "git.exe"
+    Write-Output "Downloading $gitInstallerURL"
     Start-ExecuteWithRetry { Invoke-WebRequest -UseBasicParsing -Uri $gitInstallerURL -OutFile $programFile }
     $parameters = @{
         'FilePath' = $programFile
@@ -110,7 +111,7 @@ function Install-Git {
         'Wait' = $true
         'PassThru' = $true
     }
-    Write-Output "$((Get-Date -Format g).ToString()): Installing Git"
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Installing Git"
     $p = Start-Process @parameters
     if($p.ExitCode -ne 0) {
         Throw "Failed to install Git during the environment setup"
@@ -119,7 +120,7 @@ function Install-Git {
 }
 
 function New-ScriptsDirectory {
-    Write-Output "$((Get-Date -Format g).ToString()): Entered New-ScriptsDirectory"
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Entered New-ScriptsDirectory"
     if(Test-Path $SCRIPTS_DIR) {
         Remove-Item -Recurse -Force -Path $SCRIPTS_DIR
     }
@@ -200,7 +201,7 @@ function Install-MetricsAgent {
 }
 
 function Configure-Docker{
-    Write-Output "$((Get-Date -Format g).ToString()): Entered Configure-Docker"
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Entered Configure-Docker"
     . "$SCRIPTS_DIR\scripts\variables.ps1"
     $baseUrl = "${LOG_SERVER_BASE_URL}/downloads/docker"
     $version = "18.03.1-ce"
@@ -210,7 +211,7 @@ function Configure-Docker{
     if ($dockerServiceObj.Status -ne 'Stopped') { 
        Throw "Docker service failed to stop"
     } else {
-        Write-output "$((Get-Date -Format g).ToString()): Docker service was stopped successfully"
+        Write-output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Docker service was stopped successfully"
     }
 
     # remove Docker default network: nat 
@@ -218,7 +219,9 @@ function Configure-Docker{
     Set-Content -Path "${DOCKER_DATA}\config\daemon.json" -Value '{ "bridge" : "none" }' -Encoding Ascii
 
     # update Docker binaries
+    Write-Output "Downloading ${baseUrl}/${version}/docker.exe"
     Start-ExecuteWithRetry { Invoke-WebRequest -UseBasicParsing -Uri "${baseUrl}/${version}/docker.exe" -OutFile "${DOCKER_HOME}\docker.exe" }
+    Write-Output "Downloading  ${baseUrl}/${version}/dockerd.exe"
     Start-ExecuteWithRetry { Invoke-WebRequest -UseBasicParsing -Uri "${baseUrl}/${version}/dockerd.exe" -OutFile "${DOCKER_HOME}\dockerd.exe" }
 
     $dockerServiceObj = Start-Service $DOCKER_SERVICE_NAME -PassThru
@@ -226,7 +229,7 @@ function Configure-Docker{
     if ($dockerServiceObj.Status -ne 'Running') { 
         Throw "Docker service failed to start"
     } else {
-        Write-output "Docker service was started successfully"
+        Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Docker service was started successfully"
     }
 }
 
@@ -237,25 +240,25 @@ function New-DockerNATNetwork {
     # The Docker gateway address is added to the DNS server list unless
     # disable_gatewaydns network option is enabled.
     #
-    Write-Output "$((Get-Date -Format g).ToString()): Entered New-DockerNATNetwork"
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Entered New-DockerNATNetwork"
     Start-ExecuteWithRetry {
         docker.exe network create --driver="nat" --opt "com.docker.network.windowsshim.disable_gatewaydns=true" "customnat"
         if($LASTEXITCODE -ne 0) {
             Throw "Failed to create the new Docker NAT network with disable_gatewaydns flag"
         }
     }
-    Write-Output "$((Get-Date -Format g).ToString()): Created customnat network with flag: com.docker.network.windowsshim.disable_gatewaydns=true"
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Created customnat network with flag: com.docker.network.windowsshim.disable_gatewaydns=true"
 }
 
 function Pull-MesosHealthCheckImage{
-    Write-Output "$((Get-Date -Format g).ToString()): Entered Pull-MesosHealthCheckImage"
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Entered Pull-MesosHealthCheckImage"
     Start-ExecuteWithRetry {
         docker pull mesos/windows-health-check
         if($LASTEXITCODE -ne 0) {
             Throw "Failed to pull down mesos windows-health-check image"
         }
     }
-    Write-Output "$((Get-Date -Format g).ToString()): Pull-MesosHealthCheckImage completed"
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Pull-MesosHealthCheckImage completed"
 }
 
 function Get-DCOSVersion {
@@ -300,7 +303,7 @@ function New-DCOSEnvironmentFile {
         New-Item -ItemType "Directory" -Path $DCOS_DIR
     }
     $masterIPs = Get-MasterIPs
-    Write-Output "$((Get-Date -Format g).ToString()): Trying to find the DC/OS version by querying the API of the masters: $($masterIPs -join ', ')"
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Trying to find the DC/OS version by querying the API of the masters: $($masterIPs -join ', ')"
     $dcosVersion = Get-DCOSVersion
     Set-Content -Path $GLOBAL_ENV_FILE -Value @(
         "PROVIDER=azure",
@@ -318,25 +321,33 @@ function New-DCOSMastersListFile {
 }
 
 function New-DCOSServiceWrapper {
-    Write-Output "$((Get-Date -Format g).ToString()): Entered New-DCOSServiceWrapper"
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Entered New-DCOSServiceWrapper"
     . "$SCRIPTS_DIR\scripts\variables.ps1"
     $parent = Split-Path -Parent -Path $SERVICE_WRAPPER
     if(!(Test-Path -Path $parent)) {
         New-Item -ItemType "Directory" -Path $parent
     }
+    Write-Output "Downloading $SERVICE_WRAPPER_URL"
     Start-ExecuteWithRetry { Invoke-WebRequest -UseBasicParsing -Uri $SERVICE_WRAPPER_URL -OutFile $SERVICE_WRAPPER }
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Exited New-DCOSServiceWrapper" 
 }
 
-
 try {
-    Write-Output "$((Get-Date -Format g).ToString()): Setting up DCOS Windows Agent"
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Setting up DCOS Windows Agent"
     New-ScriptsDirectory
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Calling Configure-Docker" 
     Configure-Docker
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Calling DockerNATNetwork"  
     New-DockerNATNetwork
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Calling New-DCOSEnvironmentFile"   
     New-DCOSEnvironmentFile
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Calling New-DCOSMastersListFile"   
     New-DCOSMastersListFile
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Calling New-DCOSServiceWrapper"   
     New-DCOSServiceWrapper
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Calling Install-MesosAgent"   
     Install-MesosAgent
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Calling Get-DCOSVersion"  
     $dcosVersion = Get-DCOSVersion
     if($dcosVersion.StartsWith("1.8") -or $dcosVersion.StartsWith("1.9") -or $dcosVersion.StartsWith("1.10")) {
         Install-ErlangRuntime
@@ -344,23 +355,28 @@ try {
         Install-SpartanAgent
     } else {
         # DC/OS release >= 1.11
+        Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Calling Install-DCOSNetAgent"
         Install-DCOSNetAgent
     }
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Calling Install-AdminRouterAgent"
     Install-AdminRouterAgent
     $mesosFlags = Get-MesosFlags
     $IsMatricsServiceInstalled = $false
     if($mesosFlags.authenticate_agents -eq "false") {
         # Install Metrics only if mesos_authentication is disabled
+        Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Calling Install-MetricsAgent"
         Install-MetricsAgent
         $IsMatricsServiceInstalled = $true 
     }
     # To get collect a complete list of services for node health monitoring,
     # the Diagnostics needs always to be the last one to install
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Calling Install-DiagnosticsAgent"
     Install-DiagnosticsAgent -IncludeMatricsService $IsMatricsServiceInstalled
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Calling Pull-MesosHealthCheckImage" 
     Pull-MesosHealthCheckImage
 } catch {
-    Write-Output "$((Get-Date -Format g).ToString()): Error in setting up DCOS Windows Agent: $_.ToString()"
+    Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Error in setting up DCOS Windows Agent: $_.ToString()"
     exit 1
 }
-Write-Output "$((Get-Date -Format g).ToString()): Successfully finished setting up DCOS Windows Agent"
+Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Successfully finished setting up DCOS Windows Agent"
 exit 0

@@ -30,7 +30,7 @@ function New-MetricsEnvironment {
 
 function Install-MetricsFiles {
     $filesPath = Join-Path $env:TEMP "metrics-files.zip"
-    Write-Output "Downloading Metrics binaries"
+    Write-Output "Downloading Metrics binaries $MetricsWindowsBinariesURL"
     Start-ExecuteWithRetry { Invoke-WebRequest -Uri $MetricsWindowsBinariesURL -OutFile $filesPath }
     Write-Output "Extracting binaries archive in: $METRICS_DIR"
     Expand-Archive -LiteralPath $filesPath -DestinationPath $METRICS_DIR

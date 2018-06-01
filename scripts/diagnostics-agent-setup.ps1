@@ -29,7 +29,7 @@ function New-DiagnosticsEnvironment {
 
 function Install-DiagnosticsFiles {
     $filesPath = Join-Path $env:TEMP "diagnostics-files.zip"
-    Write-Output "Downloading Diagnostics binaries"
+    Write-Output "Downloading Diagnostics binaries $DiagnosticsWindowsBinariesURL"
     Start-ExecuteWithRetry { Invoke-WebRequest -Uri $DiagnosticsWindowsBinariesURL -OutFile $filesPath }
     Write-Output "Extracting binaries archive in: $DIAGNOSTICS_DIR"
     Expand-Archive -LiteralPath $filesPath -DestinationPath $DIAGNOSTICS_DIR
@@ -110,5 +110,6 @@ try {
     Write-Output $_.ToString()
     exit 1
 }
-Write-Output "Successfully finished setting up the Windows Diagnostics Service Agent"
+Write-Output "$((Get-Date -Format "yyyy:MM:dd HH:mm:ss.fff").ToString()): Successfully finished setting up the Windows Diagnostics Service Agent"
+
 exit 0

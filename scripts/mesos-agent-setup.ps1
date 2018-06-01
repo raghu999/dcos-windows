@@ -39,7 +39,7 @@ function New-MesosEnvironment {
 
 function Install-MesosBinaries {
     $binariesPath = Join-Path $env:TEMP "mesos-binaries.zip"
-    Write-Output "Downloading Mesos binaries"
+    Write-Output "Downloading Mesos binaries $MesosWindowsBinariesURL"
     Start-ExecuteWithRetry { Invoke-WebRequest -Uri $MesosWindowsBinariesURL -OutFile $binariesPath }
     Write-Output "Extracting binaries archive in: $MESOS_BIN_DIR"
     Expand-Archive -LiteralPath $binariesPath -DestinationPath $MESOS_BIN_DIR
@@ -104,6 +104,7 @@ function New-MesosWindowsAgent {
 function Install-2017VCRuntime {
     Write-Output "Install Visual Studio 2017 runtime"
     $installerPath = Join-Path $env:TEMP "vcredist_2017_x64.exe"
+    Write-Output "Downloading $VCREDIST_2017_URL"
     Start-ExecuteWithRetry { Invoke-WebRequest -UseBasicParsing -Uri $VCREDIST_2017_URL -OutFile $installerPath }
     $p = Start-Process -Wait -PassThru -FilePath $installerPath -ArgumentList @("/install", "/passive")
     if($p.ExitCode -ne 0) {
